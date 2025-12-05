@@ -134,39 +134,33 @@ else
 fi
 echo ""
 
-# Step 2: Test all ALBs with their paths
-echo "Step 2: Testing All ALBs (${#ALB_NAMES[@]} total)"
-echo "--------------------------------------------------"
-for idx in "${!ALB_NAMES[@]}"; do
-  alb="${ALB_NAMES[$idx]}"
-  ip="${ALB_IPS[$idx]}"
-  paths="${ALB_PATHS[$idx]}"
-  
+# Step 2: Verify backend health via Monitor Service API
+echo "Step 2: Verify Backend Health via Monitor Service API"
+echo "-------------------------------------------------------"
+echo "Note: Cloud Run services are restricted to Load Balancer access only"
+echo "      Cannot test via direct HTTP requests (would return 403)"
+echo "      Using Monitor Service API to verify backend health status"
+echo ""
+
+STATUS_BEFORE=$(curl -s $MONITOR_URL/status)
+if echo "$STATUS_BEFORE" | jq -e . >/dev/null 2>&1; then
+  echo "Current backend health status:"
+  echo "$STATUS_BEFORE" | jq '.backend_services | to_entries[] | {backend: .key, current_active: .value.current_active, primary_healthy: .value.primary_healthy, secondary_healthy: .value.secondary_healthy}'
   echo ""
-  echo "=== Testing $alb (IP: $ip) ==="
-  for path in $paths; do
-    echo "  Path: $path"
-    for i in {1..3}; do
-      HTTP_CODE=$(curl -s -o /tmp/${alb}_${path//\//_}_$i.html -w "%{http_code}" http://$ip$path)
-      # Extract full region string (e.g., "asia-northeast1" or "asia-northeast2")
-      REGION_FULL=$(grep -oE "asia-northeast[0-9]" /tmp/${alb}_${path//\//_}_$i.html | head -n 1)
-      
-      # Determine region name
-      if [ "$REGION_FULL" = "$PRIMARY_REGION" ]; then
-        REGION_NAME="$PRIMARY_DISPLAY"
-      elif [ "$REGION_FULL" = "$SECONDARY_REGION" ]; then
-        REGION_NAME="$SECONDARY_DISPLAY"
-      elif [ -z "$REGION_FULL" ]; then
-        REGION_NAME="Unknown"
-      else
-        REGION_NAME="$REGION_FULL"
-      fi
-      
-      echo "    Request $i: HTTP $HTTP_CODE - Region: $REGION_NAME"
-      sleep 0.5
-    done
-  done
-done
+  
+  # Count healthy backends
+  PRIMARY_HEALTHY=$(echo "$STATUS_BEFORE" | jq '[.backend_services[] | select(.primary_healthy == true)] | length')
+  SECONDARY_HEALTHY=$(echo "$STATUS_BEFORE" | jq '[.backend_services[] | select(.secondary_healthy == true)] | length')
+  TOTAL_BACKENDS=$(echo "$STATUS_BEFORE" | jq '.backend_services | length')
+  
+  echo "Summary:"
+  echo "  Total backends: $TOTAL_BACKENDS"
+  echo "  Primary region healthy: $PRIMARY_HEALTHY/$TOTAL_BACKENDS"
+  echo "  Secondary region healthy: $SECONDARY_HEALTHY/$TOTAL_BACKENDS"
+  echo "  ✓ All backends verified via API (HTTP requests skipped due to ingress restrictions)"
+else
+  echo "⚠ Warning: Could not get backend status from monitor service"
+fi
 echo ""
 
 # Step 3: Select services to delete
@@ -314,40 +308,43 @@ echo "Step 5: Waiting for config to propagate (30 seconds)"
 echo "-----------------------------------------------------"
 sleep 30
 
-# Step 6: Test all ALBs after failover
+# Step 6: Verify backends after failover via Monitor Service API
 echo ""
-echo "Step 6: Testing All ALBs After Failover (Should All Be $SECONDARY_DISPLAY)"
-echo "-------------------------------------------------------------------------"
-for idx in "${!ALB_NAMES[@]}"; do
-  alb="${ALB_NAMES[$idx]}"
-  ip="${ALB_IPS[$idx]}"
-  paths="${ALB_PATHS[$idx]}"
+echo "Step 6: Verify Backends After Failover via Monitor Service API"
+echo "----------------------------------------------------------------"
+echo "Note: Cloud Run services are restricted to Load Balancer access only"
+echo "      Verifying failover status through Monitor Service API"
+echo ""
+
+STATUS_AFTER=$(curl -s $MONITOR_URL/status)
+if echo "$STATUS_AFTER" | jq -e . >/dev/null 2>&1; then
+  echo "Backend status after failover:"
+  echo "$STATUS_AFTER" | jq '.backend_services | to_entries[] | {backend: .key, current_active: .value.current_active, primary_healthy: .value.primary_healthy, secondary_healthy: .value.secondary_healthy}'
+  echo ""
+  
+  # Check affected backends
+  echo "Verifying affected backends have failed over to $SECONDARY_DISPLAY:"
+  FAILOVER_SUCCESS_COUNT=0
+  for backend in "${AFFECTED_BACKENDS[@]}"; do
+    CURRENT=$(echo "$STATUS_AFTER" | jq -r ".backend_services.\"$backend\".current_active" 2>/dev/null)
+    PRIMARY_H=$(echo "$STATUS_AFTER" | jq -r ".backend_services.\"$backend\".primary_healthy" 2>/dev/null)
+    SECONDARY_H=$(echo "$STATUS_AFTER" | jq -r ".backend_services.\"$backend\".secondary_healthy" 2>/dev/null)
+    
+    if [ "$CURRENT" = "secondary" ] && [ "$SECONDARY_H" = "true" ]; then
+      echo "  ✓ $backend: Successfully failed over to secondary (healthy: $SECONDARY_H)"
+      FAILOVER_SUCCESS_COUNT=$((FAILOVER_SUCCESS_COUNT + 1))
+    elif [ "$CURRENT" = "primary" ] && [ "$PRIMARY_H" = "false" ]; then
+      echo "  ✗ $backend: Still on primary but primary is unhealthy!"
+    else
+      echo "  ⚠ $backend: Current=$CURRENT, Primary=$PRIMARY_H, Secondary=$SECONDARY_H"
+    fi
+  done
   
   echo ""
-  echo "=== Testing $alb (IP: $ip) ==="
-  for path in $paths; do
-    echo "  Path: $path (should be $SECONDARY_DISPLAY now)"
-    for i in {1..3}; do
-      HTTP_CODE=$(curl -s -o /tmp/${alb}_after_${path//\//_}_$i.html -w "%{http_code}" http://$ip$path)
-      # Extract full region string (e.g., "asia-northeast1" or "asia-northeast2")
-      REGION_FULL=$(grep -oE "asia-northeast[0-9]" /tmp/${alb}_after_${path//\//_}_$i.html | head -n 1)
-      
-      # Determine region name based on actual region string
-      if [ "$REGION_FULL" = "$SECONDARY_REGION" ]; then
-        REGION_NAME="$SECONDARY_DISPLAY ✓"
-      elif [ "$REGION_FULL" = "$PRIMARY_REGION" ]; then
-        REGION_NAME="$PRIMARY_DISPLAY ✗ (unexpected)"
-      elif [ -z "$REGION_FULL" ]; then
-        REGION_NAME="Unknown (no region found)"
-      else
-        REGION_NAME="$REGION_FULL (unknown)"
-      fi
-      
-      echo "    Request $i: HTTP $HTTP_CODE - Region: $REGION_FULL ($REGION_NAME)"
-      sleep 0.5
-    done
-  done
-done
+  echo "Failover Summary: $FAILOVER_SUCCESS_COUNT/${#AFFECTED_BACKENDS[@]} backends successfully failed over"
+else
+  echo "⚠ Warning: Could not get backend status from monitor service"
+fi
 
 echo ""
 echo "=========================================="

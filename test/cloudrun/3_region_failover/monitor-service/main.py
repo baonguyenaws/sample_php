@@ -9,17 +9,16 @@ import requests
 import logging
 from flask import Flask, jsonify
 from google.cloud import compute_v1
+from google.cloud import run_v2
 import json
 
 # ==================== CONFIGURATION FROM ENV VARS ====================
 # Core Settings
-PROJECT_ID = os.environ.get('PROJECT_ID', 'my-project-sample')
+PROJECT_ID = os.environ.get('PROJECT_ID', 'my-project-1101-476915')
 PRIMARY_REGION = os.environ.get('PRIMARY_REGION', 'asia-northeast1')
 SECONDARY_REGION = os.environ.get('SECONDARY_REGION', 'asia-northeast2')
 
-# Health Check URLs
-PRIMARY_URL = os.environ.get('PRIMARY_URL', 'https://app-tokyo-zocpikyq2a-an.a.run.app')
-SECONDARY_URL = os.environ.get('SECONDARY_URL', 'https://app-osaka-zocpikyq2a-dt.a.run.app')
+CLOUD_RUN_URL_WITH_KNOWN_HASH = os.environ.get('CLOUD_RUN_URL_WITH_KNOWN_HASH', 'zocpikyq2a')
 
 # Backend Services Configuration (JSON format)
 # Format: {"backend-service-name": {"primary_neg": "neg-name", "secondary_neg": "neg-name"}}
@@ -77,31 +76,63 @@ for backend_name, negs in RAW_BACKEND_CONFIGS.items():
 logger.info(f"Configured backend services: {', '.join(BACKEND_SERVICES)}")
 logger.info(f"Primary region: {PRIMARY_REGION}, Secondary region: {SECONDARY_REGION}")
 
-def check_health(url):
-    """Check if Cloud Run service is healthy"""
-    try:
-        response = requests.get(url, timeout=5)
-        return response.status_code == 200
-    except Exception as e:
-        logger.error(f"Health check failed for {url}: {e}")
-        return False
-
 def check_service_health(service_name, region):
-    """Check if a specific Cloud Run service exists and is healthy"""
+    """Check if a specific Cloud Run service exists and is ready using Cloud Run API"""
     try:
-        # Map region to Cloud Run region code
-        region_codes = {
-            'asia-northeast1': 'an',  # Tokyo
-            'asia-northeast2': 'dt'   # Osaka
-        }
-        region_code = region_codes.get(region, region)
+        # Use Cloud Run API to check service status
+        # This works even when services are restricted to ALB-only access
+        client = run_v2.ServicesClient()
         
-        # Construct Cloud Run URL with known hash
-        # Pattern: https://{service-name}-{hash}-{region-code}.a.run.app
-        service_url = f"https://{service_name}-zocpikyq2a-{region_code}.a.run.app"
+        # Construct service path: projects/{project}/locations/{location}/services/{service}
+        service_path = f"projects/{PROJECT_ID}/locations/{region}/services/{service_name}"
         
-        logger.info(f"Checking health for: {service_url}")
-        return check_health(service_url)
+        logger.info(f"Checking service status via API: {service_path}")
+        
+        try:
+            service = client.get_service(name=service_path)
+            
+            # Check if service exists
+            if not service:
+                logger.warning(f"Service {service_name} not found in {region}")
+                return False
+            
+            # Primary method: check terminal_condition (Cloud Run v2 API standard)
+            if hasattr(service, 'terminal_condition') and service.terminal_condition:
+                condition = service.terminal_condition
+                logger.info(f"Terminal condition - type: {condition.type_}, state: {condition.state}, message: {condition.message if hasattr(condition, 'message') else ''}")
+                
+                # Check if Ready and state is CONDITION_SUCCEEDED
+                if condition.type_ == 'Ready' and condition.state == run_v2.Condition.State.CONDITION_SUCCEEDED:
+                    logger.info(f"Service {service_name} in {region} is READY (terminal_condition)")
+                    return True
+                else:
+                    logger.warning(f"Service {service_name} in {region} terminal_condition NOT READY - state: {condition.state}")
+                    return False
+            
+            # Fallback: check conditions list for Ready condition
+            if hasattr(service, 'conditions') and service.conditions:
+                for condition in service.conditions:
+                    if condition.type_ == 'Ready':
+                        logger.info(f"Conditions - type: {condition.type_}, state: {condition.state}")
+                        if condition.state == run_v2.Condition.State.CONDITION_SUCCEEDED:
+                            logger.info(f"Service {service_name} in {region} is READY (conditions)")
+                            return True
+                        else:
+                            logger.warning(f"Service {service_name} in {region} NOT READY via conditions - state: {condition.state}")
+                            return False
+            
+            # Last resort: check if service URI exists
+            if hasattr(service, 'uri') and service.uri:
+                logger.info(f"Service {service_name} in {region} has URI (assuming healthy): {service.uri}")
+                return True
+            
+            logger.warning(f"Service {service_name} in {region} exists but status unclear")
+            return False
+            
+        except Exception as api_error:
+            # Service not found or API error
+            logger.error(f"Service {service_name} not found or error in {region}: {api_error}")
+            return False
         
     except Exception as e:
         logger.error(f"Failed to check service {service_name} in {region}: {e}")

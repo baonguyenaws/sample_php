@@ -41,8 +41,11 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
   --condition=None
 
 echo ""
+sleep 10
 echo "Service deployed!"
 SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} --region=${REGION} --format='value(status.url)')
+STATUS_URL="${SERVICE_URL}/status"
+echo "Status URL: ${STATUS_URL}"
 MONITOR_URL="${SERVICE_URL}/monitor"
 echo "Monitor URL: ${MONITOR_URL}"
 
@@ -72,5 +75,10 @@ fi
 
 echo ""
 echo "✅ Deployment complete!"
+echo "📊 Status URL: ${STATUS_URL}"
 echo "📊 Monitor URL: ${MONITOR_URL}"
 echo "⏰ Scheduler Job: ${JOB_NAME} (runs every 1 minute)"
+echo "=========================================="
+
+sleep 10
+curl -s $STATUS_URL | jq
