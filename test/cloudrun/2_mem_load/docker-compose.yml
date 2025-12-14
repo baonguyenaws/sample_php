@@ -15,7 +15,7 @@ services:
           memory: 512m
     environment:
       - PYTHONUNBUFFERED=1
-      - MEMORY_TARGET=75  # Options: 75, 85, 99
+      - MEMORY_TARGET=75  # Options: 75, 85, 95, 100 (percentage of memory to consume)
       - PORT=8080
     logging:
       driver: "json-file"

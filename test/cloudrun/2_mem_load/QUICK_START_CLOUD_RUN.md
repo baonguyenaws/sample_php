@@ -27,21 +27,21 @@ The script automatically builds from source and deploys to Cloud Run with correc
 
 **Usage:**
 ```bash
-./deploy-cloud-run.sh [REGION] [SERVICE_NAME] [MEMORY_TARGET]
+./deploy-cloudrun.sh [REGION] [SERVICE_NAME] [MEMORY_TARGET]
 ```
 
 **Examples:**
 
 ```bash
-# Deploy with default values (asia-southeast1, mem-load-default, 50% Memory)
-./deploy-cloud-run.sh
+# Deploy with default values (asia-northeast1, mem-load-default, 50% Memory)
+./deploy-cloudrun.sh
 
 # Deploy 75% Memory load service
-./deploy-cloud-run.sh asia-southeast1 mem-load-75 75
+./deploy-cloudrun.sh asia-northeast1 mem-load-75 75
 
 # Deploy 85% Memory load service
-./deploy-cloud-run.sh asia-southeast1 mem-load-85 85
+./deploy-cloudrun.sh asia-northeast1 mem-load-85 85
 
 # Deploy 95% Memory load service
-./deploy-cloud-run.sh asia-southeast1 mem-load-95 95
+./deploy-cloudrun.sh asia-northeast1 mem-load-95 95
 ```

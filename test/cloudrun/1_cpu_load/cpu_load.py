@@ -119,13 +119,8 @@ def calculate_target_processes(cpu_count, target_percentage=85):
 
 def main():
     """Main function to start CPU load generator"""
-    # Get target CPU percentage from environment variable (default: 85%)
-    target_percentage = int(os.getenv('CPU_TARGET', '85'))
-    
-    # Validate target percentage
-    if target_percentage not in [75, 85, 99]:
-        print(f"[{datetime.now()}] Warning: CPU_TARGET={target_percentage} not in [75, 85, 99]. Using default 85%")
-        target_percentage = 85
+    # Get target CPU percentage from environment variable (default: 100%)
+    target_percentage = int(os.getenv('CPU_TARGET', '100'))
     
     print(f"[{datetime.now()}] ===== CPU Load Generator Started =====")
     print(f"[{datetime.now()}] Target: {target_percentage}% CPU utilization")

@@ -27,21 +27,21 @@ The script automatically builds from source and deploys to Cloud Run with correc
 
 **Usage:**
 ```bash
-./deploy-cloud-run.sh [REGION] [SERVICE_NAME] [CPU_TARGET]
+./deploy-cloudrun.sh [REGION] [SERVICE_NAME] [CPU_TARGET]
 ```
 
 **Examples:**
 
 ```bash
-# Deploy with default values (asia-southeast1, cpu-load-85, 85% CPU)
-./deploy-cloud-run.sh
+# Deploy with default values (asia-northeast1, cpu-load-85, 85% CPU)
+./deploy-cloudrun.sh
 
 # Deploy 75% CPU load service
-./deploy-cloud-run.sh asia-southeast1 cpu-load-75 75
+./deploy-cloudrun.sh asia-northeast1 cpu-load-75 75
 
 # Deploy 85% CPU load service
-./deploy-cloud-run.sh asia-southeast1 cpu-load-85 85
+./deploy-cloudrun.sh asia-northeast1 cpu-load-85 85
 
 # Deploy 95% CPU load service
-./deploy-cloud-run.sh asia-southeast1 cpu-load-95 95
+./deploy-cloudrun.sh asia-northeast1 cpu-load-95 95
 ```

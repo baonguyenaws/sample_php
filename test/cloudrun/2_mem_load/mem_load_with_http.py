@@ -219,14 +219,8 @@ def wait_for_port(port, timeout=10):
 
 def main():
     """Main function"""
-    # Get target memory percentage from environment variable (REQUIRED)
-    target_percentage = int(os.getenv('MEMORY_TARGET', '0'))
-    
-    # Validate target percentage
-    if target_percentage not in [75, 85, 95]:
-        print(f"[{datetime.now()}] ERROR: MEMORY_TARGET must be set to 75, 85, or 95")
-        print(f"[{datetime.now()}] Current value: {target_percentage}")
-        raise ValueError("Invalid MEMORY_TARGET. Must be 75, 85, or 95")
+    # Get target memory percentage from environment variable (default: 100%)
+    target_percentage = int(os.getenv('MEMORY_TARGET', '100'))
     
     print(f"[{datetime.now()}] ===== Memory Load Generator Started (Cloud Run Mode) =====")
     print(f"[{datetime.now()}] Target: {target_percentage}% Memory utilization")

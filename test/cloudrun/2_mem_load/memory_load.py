@@ -240,13 +240,8 @@ class MemoryLoadGenerator:
 
 def main():
     """Main function"""
-    # Get target memory percentage from environment variable (default: 75%)
-    target_percentage = int(os.getenv('MEMORY_TARGET', '75'))
-    
-    # Validate target percentage
-    if target_percentage not in [75, 85, 99]:
-        print(f"[{datetime.now()}] Warning: MEMORY_TARGET={target_percentage} not in [75, 85, 99]. Using default 75%")
-        target_percentage = 75
+    # Get target memory percentage from environment variable (default: 100%)
+    target_percentage = int(os.getenv('MEMORY_TARGET', '100'))
     
     # Create and run memory load generator
     generator = MemoryLoadGenerator(target_percentage=target_percentage)

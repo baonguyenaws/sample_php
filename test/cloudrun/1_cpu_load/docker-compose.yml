@@ -15,7 +15,7 @@ services:
           memory: 512m
     environment:
       - PYTHONUNBUFFERED=1
-      - CPU_TARGET=85  # Options: 75, 85, 99
+      - CPU_TARGET=75  # Options: 75, 85, 95, 100 (percentage of CPU to consume)
       - PORT=8080
     logging:
       driver: "json-file"

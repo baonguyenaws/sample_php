@@ -1,21 +1,21 @@
 version: '3.8'
 
 services:
-  memory-load-generator:
+  latency-simulator:
     build: .
-    image: memory-load-generator:latest
-    container_name: memory-load-100
+    image: latency-simulator:latest
+    container_name: latency-test
     restart: unless-stopped
     ports:
-      - "81100:8080"
+      - "8080:8080"
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 512m
+          cpus: '0.5'
+          memory: 256m
     environment:
       - PYTHONUNBUFFERED=1
-      - MEMORY_TARGET=100
+      - LATENCY_MS=100  # 100, 200, 300 Độ trễ mong muốn (milliseconds)
       - PORT=8080
     logging:
       driver: "json-file"

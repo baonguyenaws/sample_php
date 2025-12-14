@@ -264,14 +264,8 @@ def wait_for_port(port, timeout=10):
 
 def main():
     """Main function"""
-    # Get target CPU percentage from environment variable (REQUIRED)
-    target_percentage = int(os.getenv('CPU_TARGET', '0'))
-    
-    # Validate target percentage
-    if target_percentage not in [75, 85, 95]:
-        print(f"[{datetime.now()}] ERROR: CPU_TARGET must be set to 75, 85, or 95")
-        print(f"[{datetime.now()}] Current value: {target_percentage}")
-        raise ValueError("Invalid CPU_TARGET. Must be 75, 85, or 95")
+    # Get target CPU percentage from environment variable (default: 100%)
+    target_percentage = int(os.getenv('CPU_TARGET', '100'))
     
     print(f"[{datetime.now()}] ===== CPU Load Generator Started (Cloud Run Mode) =====")
     print(f"[{datetime.now()}] Target: {target_percentage}% CPU utilization")
