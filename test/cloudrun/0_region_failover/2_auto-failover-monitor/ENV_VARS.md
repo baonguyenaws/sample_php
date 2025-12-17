@@ -7,7 +7,7 @@ Service này được thiết kế để có thể tái sử dụng cho nhiều 
 
 ### 1. Core Settings
 - **PROJECT_ID**: GCP Project ID
-  - Example: `my-project-1101-476915`
+  - Example: `rare-karma-480813-i3`
   
 - **PRIMARY_REGION**: Primary region (ưu tiên sử dụng)
   - Example: `asia-northeast1` (Tokyo)

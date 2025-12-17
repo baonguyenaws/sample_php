@@ -14,7 +14,7 @@ import json
 
 # ==================== CONFIGURATION FROM ENV VARS ====================
 # Core Settings
-PROJECT_ID = os.environ.get('PROJECT_ID', 'my-project-1101-476915')
+PROJECT_ID = os.environ.get('PROJECT_ID', 'rare-karma-480813-i3')
 PRIMARY_REGION = os.environ.get('PRIMARY_REGION', 'asia-northeast1')
 SECONDARY_REGION = os.environ.get('SECONDARY_REGION', 'asia-northeast2')
 

@@ -29,7 +29,7 @@ terraform output -raw test_config_yaml > test-config.yaml
 cd monitor-service && ./deploy.sh && cd ..
 
 ### 4. Check the Cloud Scheduler job
-gcloud scheduler jobs describe failover-monitor-job --location=asia-northeast1 --project=my-project-1101-476915
+gcloud scheduler jobs describe failover-monitor-job --location=asia-northeast1 --project=rare-karma-480813-i3
 
 ### 5. Check the failover monitor status
 curl -s https://auto-failover-monitor-415553820463.asia-northeast2.run.app/status | jq

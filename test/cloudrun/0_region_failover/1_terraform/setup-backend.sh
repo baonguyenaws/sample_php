@@ -4,7 +4,7 @@
 # This script creates a GCS bucket to store Terraform state
 # The same bucket will be used across local machine and Cloud Shell
 
-PROJECT_ID="my-project-1101-476915"
+PROJECT_ID="rare-karma-480813-i3"
 BUCKET_NAME="${PROJECT_ID}-terraform-state"
 LOCATION="asia-northeast1"
 

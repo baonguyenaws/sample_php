@@ -8,7 +8,7 @@ terraform {
   
   # Remote state in GCS - shared across local and Cloud Shell
   backend "gcs" {
-    bucket = "my-project-1101-476915-terraform-state"
+    bucket = "rare-karma-480813-i3-terraform-state"
     prefix = "region-failover"
   }
 }
