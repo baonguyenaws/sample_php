@@ -1,0 +1,6 @@
+
+tạo code terraform để tạo cấu trúc sau:
+- 1 ALB gắn với cloudrun đơn giản thông qua neg
+- alert policy để cảnh báo khi 2% tổng số request từ ALB tới Cloudrun có response trả về trong 1 phút có latency lớn hơn 3 giây
+
+code terraform để trong thư mục /alb/1_terraform

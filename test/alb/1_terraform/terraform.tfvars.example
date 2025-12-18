@@ -1,0 +1,6 @@
+project_id             = "your-gcp-project-id"
+region                 = "us-central1"
+cloudrun_service_name  = "app-service"
+container_image        = "gcr.io/cloudrun/hello"
+ssl_domains            = ["yourdomain.com"]
+alert_email            = "your-email@example.com"

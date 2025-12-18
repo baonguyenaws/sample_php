@@ -135,3 +135,23 @@ secrets.yml
 
 # Cloud Run / GCP
 .gcloudignore
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+terraform.tfstate.d/
+*.tfvars
+!*.tfvars.example
+*.tfplan
+*.tfplan.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
